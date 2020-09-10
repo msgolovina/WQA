@@ -78,12 +78,12 @@ def train(data_iterator, model, config):
             model.train()
 
             batch = [t.to(config['device']) for t in batch]
-            batch_input_ids = batch[0].view(config["per_gpu_batch_size"]*2, -1)
-            batch_attention_mask = batch[1].view(config["per_gpu_batch_size"]*2, -1)
-            batch_token_type_ids = batch[2].view(config["per_gpu_batch_size"]*2, -1)
-            batch_y_start = batch[3].view(config["per_gpu_batch_size"]*2)
-            batch_y_end = batch[4].view(config["per_gpu_batch_size"]*2)
-            batch_y = batch[5].view(config["per_gpu_batch_size"]*2)
+            batch_input_ids = batch[0]
+            batch_attention_mask = batch[1]
+            batch_token_type_ids = batch[2]
+            batch_y_start = batch[3]
+            batch_y_end = batch[4]
+            batch_y = batch[5]
 
             logits_start, logits_end, logits_class = model(
                 batch_input_ids,

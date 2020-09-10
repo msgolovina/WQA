@@ -1,4 +1,4 @@
-from dataset import NQIterableDataset
+from dataset import NQDataset
 from train_function import train
 from models import BertForQA
 
@@ -6,7 +6,8 @@ import argparse
 import logging
 import os
 import yaml
-from transformers import BertTokenizer, BertConfig, AdamW
+from torch.utils.data import DataLoader, RandomSampler
+from transformers import BertTokenizer, BertConfig
 
 logger = logging.getLogger(__name__)
 
@@ -17,9 +18,7 @@ parser.add_argument(
 parser.add_argument(
     '--do-train', action='store_true'
 )
-# parser.add_argument(
-#     '--do-eval', action='store_true'
-# )
+
 
 if __name__ == '__main__':
     args = parser.parse_args()
@@ -37,14 +36,17 @@ if __name__ == '__main__':
     logger.info(f'Training/eval params: {config}')
 
     if args.do_train:
-        dataset = NQIterableDataset(
+        batch_size = config['per_gpu_train_batch_size'] * max(1, config['n_gpu'])
+        dataset = NQDataset(
             config['train_data_path'],
             tokenizer,
-            config['max_seq_len'],
-            config['per_gpu_batch_size'],
         )
+        sampler = RandomSampler(dataset)
+        dataloader = DataLoader(dataset, sampler=sampler,
+                                      batch_size=config['batch_size'],
+                                      pin_memory=True)
         global_step, tr_loss = train(
-            dataset, model, config
+            dataloader, model, config
         )
         if not os.path.exists(config['output_dir']):
             os.makedirs(config['output_dir'])
@@ -58,9 +60,3 @@ if __name__ == '__main__':
         # todo: loading from checkpt
         # todo: add eval
         # todo: add metrics
-
-
-
-
-
-
