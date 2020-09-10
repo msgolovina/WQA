@@ -45,6 +45,7 @@ if __name__ == '__main__':
     params['max_grad_norm'] = 1.0
     params['local_rank'] = -1
     params['per_gpu_batch_size'] = 4
+    params['max_steps'] = -1
 
     # device
 
