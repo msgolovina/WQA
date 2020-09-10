@@ -36,7 +36,7 @@ if __name__ == '__main__':
     logger.info(f'Training/eval params: {config}')
 
     if args.do_train:
-        batch_size = config['per_gpu_train_batch_size'] * max(1, config['n_gpu'])
+        batch_size = config['per_gpu_batch_size'] * max(1, config['n_gpu'])
         dataset = NQDataset(
             config['train_data_path'],
             tokenizer,
