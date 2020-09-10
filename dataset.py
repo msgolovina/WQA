@@ -10,11 +10,12 @@ import torch
 
 
 class NQIterableDataset(IterableDataset):
-    def __init__(self, filepath, tokenizer, max_seq_len):
+    def __init__(self, filepath, tokenizer, max_seq_len, batch_size):
         self.filepath = filepath
         self.tokenizer = tokenizer
         self.sep_token_index = tokenizer.convert_tokens_to_ids('[SEP]')
         self.max_seq_len = max_seq_len
+        self.batch_size = batch_size
 
     @staticmethod
     def get_class_label(annotation: Dict) -> Tuple[bool, int]:
@@ -88,16 +89,6 @@ class NQIterableDataset(IterableDataset):
         la_candidates = sample['long_answer_candidates']
         is_pos, class_label = self.get_class_label(annotation)
 
-        # initialize input arrays
-        batch_ids = [line]
-        batch_size = 2 * len(batch_ids)
-        input_ids = np.zeros((batch_size, self.max_seq_len), dtype=np.int64)
-        token_type_ids = np.ones((batch_size, self.max_seq_len), dtype=np.int64)
-        y_start = np.zeros((batch_size,), dtype=np.int64)
-        y_end = np.zeros((batch_size,), dtype=np.int64)
-        y = np.zeros((batch_size,), dtype=np.int64)
-        attention_mask = input_ids > 0
-
         sample_id = sample['example_id']
         doc_words = sample['document_text'].split()
 
@@ -136,21 +127,29 @@ class NQIterableDataset(IterableDataset):
         neg_input_tokens, neg_input_ids, neg_start, neg_end = self.qp_to_tokens(
             question_words, False, neg_words, neg_start, neg_end)
 
+        # initialize input arrays
+        batch_ids = [line]
+        batch_size = 2 * len(batch_ids)
+        input_ids = np.zeros((batch_size, self.max_seq_len), dtype=np.int64)
+        token_type_ids = np.ones((batch_size, self.max_seq_len), dtype=np.int64)
+        y_start = np.zeros((batch_size,), dtype=np.int64)
+        y_end = np.zeros((batch_size,), dtype=np.int64)
+        y = np.zeros((batch_size,), dtype=np.int64)
 
-        # fill in input arrays
+        # fill in the arrays
         i = 0
         y[2 * i] = class_label
         y[2 * i + 1] = 0
         input_ids[2 * i, :len(pos_input_ids)] = pos_input_ids
         input_ids[2 * i + 1, :len(neg_input_ids)] = neg_input_ids
 
-        token_type_ids[2 * i, :len(pos_input_ids)] = [0 if i <=
+        token_type_ids[2 * i, :len(pos_input_ids)] = [0 if j <=
                                                                 pos_input_ids.index(
-                                                                    self.sep_token_index) else 1 for i
+                                                                    self.sep_token_index) else 1 for j
                                                            in range(len(pos_input_ids))]
-        token_type_ids[2 * i + 1, :len(neg_input_ids)] = [0 if i <=
+        token_type_ids[2 * i + 1, :len(neg_input_ids)] = [0 if j <=
                                                                     neg_input_ids.index(
-                                                                        self.sep_token_index) else 1 for i
+                                                                        self.sep_token_index) else 1 for j
                                                                in range(len(neg_input_ids))]
         y_start[2 * i] = pos_start
         y_start[2 * i + 1] = neg_start
@@ -165,8 +164,9 @@ class NQIterableDataset(IterableDataset):
                torch.LongTensor(y_end), \
                torch.LongTensor(y)
 
+
     def __iter__(self):
-        batch_size = 2
+        batch_size = self.batch_size
         iterator = open(self.filepath)
         mapped_iterator = map(self.get_all_data, iterator)
         # todo: is it less efficient than DataLoader since it does not parallelize stuff?
@@ -179,7 +179,7 @@ class NQIterableDataset(IterableDataset):
             while len(batch) >= batch_size:
                 if len(batch) == batch_size:
                     batch = [
-                        torch.stack([i[j] for i in batch]) for j in
+                        torch.stack([i[j] for i in batch]).view(batch_size * 2, -1).squeeze() for j in
                         range(len(batch[0]))
                     ]
                     yield batch
@@ -190,7 +190,7 @@ class NQIterableDataset(IterableDataset):
                     yield return_batch
             if len(batch) > 0 and not drop_last:
                 batch = [
-                    torch.stack([i[j] for i in batch]) for j in
+                    torch.stack([i[j] for i in batch]).view(batch_size * 2, -1).squeeze() for j in
                     range(len(batch[0]))
                 ]
                 yield batch
