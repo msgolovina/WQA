@@ -30,7 +30,8 @@ echo "PREPARING CONFIG"
 PYTHONPATH=. python scripts/prepare_config.py \
   --train-data-path=${TRAIN_DATA_PATH} \
   --log-dir=${LOG_DIR} \
-  --config-path=${LOG_DIR}/config.yml
+  --config-path=${LOG_DIR}/config.yml \
+  --fp16
 
 echo "TRAINING"
 CONFIG_PATH=${LOG_DIR}/config.yml bash -x bin/training/train.sh
