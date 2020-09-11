@@ -17,6 +17,20 @@ parser.add_argument(
 parser.add_argument(
     '--config-path', type=str, default='./training/config/base_config.yml'
 )
+parser.add_argument("--local_rank", type=int, default=config.local_rank,
+                    help="local_rank for distributed training on gpus")
+parser.add_argument(
+    "--fp16",
+    action="store_true",
+    help="Whether to use 16-bit (mixed) precision through NVIDIA apex instead of 32-bit",
+)
+parser.add_argument(
+    "--fp16-opt-level",
+    type=str,
+    default="O1",
+    help="For fp16: Apex AMP optimization level selected in ['O0', 'O1', 'O2', and 'O3']."
+         "See details at https://nvidia.github.io/apex/amp.html",
+)
 
 if __name__ == '__main__':
     args = parser.parse_args()
@@ -33,7 +47,6 @@ if __name__ == '__main__':
     params['output_dir'] = str(log_dir / 'output')
 
     # training params
-
     params['seed'] = 777
     params['pretrained_bert_name'] = 'bert-base-uncased'
     params['max_seq_len'] = 384
@@ -48,13 +61,16 @@ if __name__ == '__main__':
     params['max_steps'] = -1
 
     # device
-
     if torch.cuda.is_available():
         params['device'] = 'cuda'
         params['n_gpu'] = torch.cuda.device_count()
     else:
         params['device'] = 'cpu'
         params['n_gpu'] = 0
+
+    # 16-bit mixed precision
+    params['fp16'] = args.fp16
+    params['fp16_opt_level'] = args.fp16_opt_level
 
     with open(args.config_path, 'w') as f:
         yaml.dump(params, f)
