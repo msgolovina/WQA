@@ -119,10 +119,11 @@ def train(data_iterator, model, config):
                 config['output_dir'],
                 f'checkpoint-{global_step}'
             )
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
             model_to_save = model.module if hasattr(model, 'module') else model
             model_to_save.save_pretrained(output_dir)
 
-            #torch.save(config, os.path.join('training_args.bin'))
             torch.save(optimizer.state_dict(), optimizer_path)
             logger.info('Saving model checkpoint and'
                         f'optimizer state to {output_dir}')
