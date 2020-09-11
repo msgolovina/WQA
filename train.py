@@ -33,6 +33,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     with open(args.config_path, 'r') as f:
         config = yaml.safe_load(f)
+    config['local_rank'] = args.local_rank
     tokenizer = BertTokenizer.from_pretrained(
         config['pretrained_bert_name'],
         do_lower_case=True
