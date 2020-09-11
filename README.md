@@ -1,6 +1,6 @@
 **Tensorflow 2.0 Question Answering**
 
-To replicate dataset preprocessing, copy https://www.kaggle.com/c/tensorflow2-question-answering/data?select=simplified-nq-train.jsonl to `./data/` and run
+To reproduce dataset preprocessing, copy https://www.kaggle.com/c/tensorflow2-question-answering/data?select=simplified-nq-train.jsonl to `./data/` and run
 
     bash prepare_datasets.sh
 
