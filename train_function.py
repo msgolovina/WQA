@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 def train(data_iterator, model, config):
 
-    if config['local_rank'] in [-1, 0]:
+    if args.local_rank in [-1, 0]:
         tb_writer = SummaryWriter()
 
     if config['max_steps'] > 0:
@@ -73,11 +73,11 @@ def train(data_iterator, model, config):
         model = torch.nn.DataParallel(model)
 
     # distributed training
-    if config['local_rank'] != -1:
+    if args.local_rank != -1:
         model = torch.nn.parallel.DistributedDataParallel(
             model,
-            device_ids=[config['local_rank']],
-            output_device=config['local_rank'],
+            device_ids=[args.local_rank],
+            output_device=args.local_rank,
             find_unused_parameters=True,
         )
 
@@ -113,14 +113,14 @@ def train(data_iterator, model, config):
         epochs_trained,
         config["num_train_epochs"],
         desc='Epoch',
-        disable=config['local_rank'] not in [-1, 0], # todo: look into this
+        disable=args.local_rank not in [-1, 0], # todo: look into this
     )
 
     for iteration in train_iterator:
         epoch_iterator = tqdm(
             data_iterator,
             desc='Iteration',
-            disable=config['local_rank'] not in [-1, 0],
+            disable=args.local_rank not in [-1, 0],
         )
         for step, batch in enumerate(epoch_iterator):
             if steps_trained_in_current_epoch > 0:
@@ -184,7 +184,7 @@ def train(data_iterator, model, config):
                 # todo: eval
 
                 # save model checkpoint
-                if config['local_rank'] in [-1, 0] and \
+                if args.local_rank in [-1, 0] and \
                         config['save_steps'] > 0 and \
                         global_step % config['save_steps'] == 0:
 
@@ -207,7 +207,7 @@ def train(data_iterator, model, config):
         if 0 < config['max_steps'] < global_step:
             train_iterator.close()
             break
-    if config['local_rank'] in [-1, 0]:
+    if args.local_rank in [-1, 0]:
         tb_writer.close()
 
     return global_step, tr_loss / global_step

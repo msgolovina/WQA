@@ -41,7 +41,6 @@ if __name__ == '__main__':
     else:
         config['device'] = 'cpu'
         config['n_gpu'] = 0
-    # config['local_rank'] = -1
 
     # 16-bit mixed precision
     config['fp16'] = args.fp16
