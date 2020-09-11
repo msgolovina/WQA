@@ -43,7 +43,7 @@ if __name__ == '__main__':
         )
         sampler = RandomSampler(dataset)
         dataloader = DataLoader(dataset, sampler=sampler,
-                                      batch_size=config['batch_size'],
+                                      batch_size=batch_size,
                                       pin_memory=True)
         global_step, tr_loss = train(
             dataloader, model, config
