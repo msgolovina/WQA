@@ -42,6 +42,13 @@ def train(data_iterator, model, config):
     if os.path.isfile(optimizer_path):
         optimizer.load_state_dict(torch.load(optimizer_path))
 
+    if config['fp16']:
+        try:
+            from apex import amp
+        except ImportError:
+            raise ImportError
+        model, optimizer = amp.initialize(model, optimizer, opt_level=config['fp16_opt_level'])
+
     # training
     logger.info('==========================')
     logger.info('---------TRAINING---------')
@@ -100,15 +107,30 @@ def train(data_iterator, model, config):
             if config['n_gpu'] > 1:
                 loss = loss.mean()
 
-            loss.backward()
+            if args.fp16:
+                with amp.scale_loss(loss, optimizer) as sc_loss:
+                    sc_loss.backward()
+            else:
+                loss.backward()
+
+            # add loss
+            tr_loss += loss.item()
 
             # todo: condition on the step in num of grad accum steps
 
-            torch.nn.utils.clip_grad_norm_(
-                model.parameters(),
-                config['max_grad_norm'],
-            )
+            if args.fp16:
+                torch.nn.utils.clip_grad_norm_(
+                    amp.master_params(optimizer),
+                    config['max_grad_norm']
+                )
+            else:
+                torch.nn.utils.clip_grad_norm_(
+                    model.parameters(),
+                    config['max_grad_norm']
+                )
+
             optimizer.step()
+            model.zero_grad()
 
             global_step += 1
 
