@@ -17,7 +17,7 @@ parser.add_argument(
 parser.add_argument(
     '--config-path', type=str, default='./training/config/base_config.yml'
 )
-parser.add_argument("--local_rank", type=int, default=config.local_rank,
+parser.add_argument("--local_rank", type=int, default=-1,
                     help="local_rank for distributed training on gpus")
 parser.add_argument(
     "--fp16",
