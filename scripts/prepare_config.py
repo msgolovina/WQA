@@ -22,55 +22,57 @@ parser.add_argument("--local_rank", type=int, default=-1,
 parser.add_argument(
     "--fp16",
     action="store_true",
-    help="Whether to use 16-bit (mixed) precision through NVIDIA apex instead of 32-bit",
 )
 parser.add_argument(
     "--fp16-opt-level",
     type=str,
     default="O1",
-    help="For fp16: Apex AMP optimization level selected in ['O0', 'O1', 'O2', and 'O3']."
-         "See details at https://nvidia.github.io/apex/amp.html",
+    help="Apex amp optimization level in ['00', '01', '02', '03']."
+         "Read more: https://nvidia.github.io/apex/amp.html",
 )
 
 if __name__ == '__main__':
     args = parser.parse_args()
 
-    params = {}
+    config = {}
+    
+    # device
+    if torch.cuda.is_available():
+        config['device'] = 'cuda'
+        config['n_gpu'] = torch.cuda.device_count()
+    else:
+        config['device'] = 'cpu'
+        config['n_gpu'] = 0
+    # config['local_rank'] = -1
+
+    # 16-bit mixed precision
+    config['fp16'] = args.fp16
+    config['fp16_opt_level'] = args.fp16_opt_level
 
     # paths
 
-    params['train_data_path'] = args.train_data_path
-    params['test_data_path'] = args.test_data_path
+    config['train_data_path'] = args.train_data_path
+    config['test_data_path'] = args.test_data_path
     log_dir = Path(args.log_dir)
     log_dir.mkdir(exist_ok=True, parents=True)
-    params['log_dir'] = str(log_dir)
-    params['output_dir'] = str(log_dir / 'output')
+    config['log_dir'] = str(log_dir)
+    config['output_dir'] = str(log_dir / 'output')
 
-    # training params
-    params['seed'] = 777
-    params['pretrained_bert_name'] = 'bert-base-uncased'
-    params['max_seq_len'] = 384
-    params['num_labels'] = 5
-    params['num_train_epochs'] = 2
-    params['learning_rate'] = 0.00005
-    params['adam_epsilon'] = 1e-8
-    params['weight_decay'] = 0.0
-    params['max_grad_norm'] = 1.0
-    params['local_rank'] = -1
-    params['per_gpu_batch_size'] = 4
-    params['max_steps'] = -1
+    # seed
+    config['seed'] = 777
 
-    # device
-    if torch.cuda.is_available():
-        params['device'] = 'cuda'
-        params['n_gpu'] = torch.cuda.device_count()
-    else:
-        params['device'] = 'cpu'
-        params['n_gpu'] = 0
-
-    # 16-bit mixed precision
-    params['fp16'] = args.fp16
-    params['fp16_opt_level'] = args.fp16_opt_level
+    # training config
+    config['pretrained_bert_name'] = 'bert-base-uncased'
+    config['max_seq_len'] = 384
+    config['num_labels'] = 5
+    config['num_train_epochs'] = 2
+    config['per_gpu_batch_size'] = 4
+    config['batch_size'] = config['per_gpu_batch_size'] * max(1, config['n_gpu'])
+    config['max_steps'] = -1
+    config['learning_rate'] = 0.00005
+    config['adam_epsilon'] = 1e-8
+    config['weight_decay'] = 0.0
+    config['max_grad_norm'] = 1.0
 
     with open(args.config_path, 'w') as f:
-        yaml.dump(params, f)
+        yaml.dump(config, f)
