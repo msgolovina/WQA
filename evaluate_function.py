@@ -1,2 +1,2 @@
-def evaluate:
+def evaluate():
     print('ok')
