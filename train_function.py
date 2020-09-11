@@ -107,7 +107,7 @@ def train(data_iterator, model, config):
             if config['n_gpu'] > 1:
                 loss = loss.mean()
 
-            if args.fp16:
+            if config['fp16']:
                 with amp.scale_loss(loss, optimizer) as sc_loss:
                     sc_loss.backward()
             else:
@@ -118,7 +118,7 @@ def train(data_iterator, model, config):
 
             # todo: condition on the step in num of grad accum steps
 
-            if args.fp16:
+            if config['fp16']:
                 torch.nn.utils.clip_grad_norm_(
                     amp.master_params(optimizer),
                     config['max_grad_norm']
