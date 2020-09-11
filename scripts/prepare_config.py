@@ -28,6 +28,12 @@ parser.add_argument(
     help="Apex amp optimization level in ['00', '01', '02', '03']."
          "Read more: https://nvidia.github.io/apex/amp.html",
 )
+parser.add_argument(
+    "--gradient-accumulation-steps",
+    type=int,
+    default=1,
+    help="Number of updates steps to accumulate before performing a backward/update pass.",
+)
 
 if __name__ == '__main__':
     args = parser.parse_args()
@@ -70,6 +76,8 @@ if __name__ == '__main__':
     config['adam_epsilon'] = 1e-8
     config['weight_decay'] = 0.0
     config['max_grad_norm'] = 1.0
+    config['gradient_accumulation_steps'] = args.gradient_accumulation_steps
+
 
     with open(args.config_path, 'w') as f:
         yaml.dump(config, f)
