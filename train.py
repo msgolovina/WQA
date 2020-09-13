@@ -31,7 +31,7 @@ def train(data_iterator, model, config):
     if config['max_steps'] > 0:
         num_train_steps = config['max_steps']
         num_train_epochs = config['max_steps'] // (
-            len(data_iterator) // config['gradient_accumulation_steps']) + 1
+            len(data_iterator) // config['gradient_accumulation_steps']) + 1 # todo: drop
     else:
         num_train_steps = len(data_iterator) // \
                       config['gradient_accumulation_steps'] * \
@@ -228,7 +228,7 @@ if __name__ == '__main__':
         '--do-train', action='store_true'
     )
     parser.add_argument(
-        "--local_rank",
+        "--local_rank", # todo
         type=int,
         default=-1,
         help="local_rank for distributed training on gpus",
@@ -237,6 +237,8 @@ if __name__ == '__main__':
                         help="Whether not to use CUDA when available")
     parser.add_argument("--save_steps", type=int, default=1000,
                         help="Save checkpoint every X updates steps.")
+    parser.add_argument("--do_eval", action="store_true",
+                        help="Whether to run eval on the dev set.")
     args = parser.parse_args()
     with open(args.config_path, 'r') as f:
         config = yaml.safe_load(f)

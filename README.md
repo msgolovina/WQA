@@ -1,5 +1,7 @@
 **Tensorflow 2.0 Question Answering**
 
+trained using 8 x Tesla V100-SXM2-32GB (20 min on one epoch)
+
     pip install torch==1.5.1+cu101 torchvision==0.6.1+cu101 -f https://download.pytorch.org/whl/torch_stable.html
 
 
