@@ -76,6 +76,7 @@ top3_pred_answers = []
 
 for batch in tqdm(dataloader, desc="Evaluating"):
         model.eval()
+        batch = [torch.tensor(x) for x in batch]
         batch = tuple(t.to(args.device) for t in batch)
 
         with torch.no_grad():
