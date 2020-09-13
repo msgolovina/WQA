@@ -4,7 +4,7 @@ from models import BertForQA
 import argparse
 import logging
 import numpy as np
-from torch.utils.data import DataLoader, SequentialSampler
+from torch.utils.data import DataLoader
 # from transformers import BertConfig, BertTokenizer
 import torch
 from tqdm import tqdm
@@ -59,8 +59,7 @@ model.to(args.device)
 
 batch_size = 1 * max(1, args.n_gpu)
 dataset = NQIterableTestDataset(args.test_path)
-sampler = SequentialSampler(dataset)
-dataloader = DataLoader(dataset, sampler=sampler,
+dataloader = DataLoader(dataset,
                                       batch_size=batch_size,
                                       pin_memory=True)
 
