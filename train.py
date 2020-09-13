@@ -204,7 +204,7 @@ def train(data_iterator, model, config):
                     model_to_save.save_pretrained(output_dir)
 
                     torch.save(optimizer.state_dict(), optimizer_path)
-                    logger.info('Saving model checkpoint and'
+                    logger.info('Saving model checkpoint and '
                                 f'optimizer state to {output_dir}')
 
             if 0 < config['max_steps'] < global_step:
