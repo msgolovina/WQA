@@ -39,6 +39,10 @@ if __name__ == '__main__':
         do_lower_case=True
     )
 
+    # todo: move device and local rank setting from config to train script
+    if not config['local_rank'] == -1:
+        torch.distributed.init_process_group(backend='nccl')
+
     # setup logging
     logging.basicConfig(
         format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
