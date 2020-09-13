@@ -4,8 +4,6 @@ from models import BertForQA
 import argparse
 import logging
 import numpy as np
-from torch.utils.data import DataLoader
-# from transformers import BertConfig, BertTokenizer
 import torch
 from tqdm import tqdm
 from sklearn.metrics import accuracy_score
@@ -27,7 +25,7 @@ parser.add_argument(
 parser.add_argument(
     "--model-checkpoint-path",
     type=str,
-    default='logs/test_run/output/checkpoint-10000/',
+    default='logs/test_run/output/checkpoint-17000/',
 )
 parser.add_argument("--no_cuda", action="store_true",
                     help="Whether not to use CUDA when available")
@@ -57,15 +55,15 @@ if args.local_rank == 0:
     torch.distributed.barrier()
 model.to(args.device)
 
-batch_size = 1 * max(1, args.n_gpu)
+batch_size = 1  # * max(1, args.n_gpu)
 dataset = NQIterableTestDataset(args.test_path)
-dataloader = DataLoader(dataset,
-                                      batch_size=batch_size,
-                                      pin_memory=True)
+# dataloader = DataLoader(dataset,
+#                                       batch_size=batch_size,
+#                                       pin_memory=True)
 
 # multi-gpu evaluate
-if args.n_gpu > 1 and not isinstance(model, torch.nn.DataParallel):
-    model = torch.nn.DataParallel(model)
+# if args.n_gpu > 1 and not isinstance(model, torch.nn.DataParallel):
+#     model = torch.nn.DataParallel(model)
 
 # Eval!
 logger.info("***** Running evaluation *****")
@@ -74,43 +72,42 @@ answers = []
 pred_answers = []
 top3_pred_answers = []
 
-for batch in tqdm(dataloader, desc="Evaluating"):
-        model.eval()
-        batch = [torch.tensor(x) for x in batch]
-        batch = tuple(t.to(args.device) for t in batch)
+for batch in tqdm(dataset, desc="Evaluating"):
+    model.eval()
 
-        with torch.no_grad():
+    with torch.no_grad():
 
-            batch = [torch.tensor(t) for t in batch]
-            batch = [t.to(args.device) for t in batch]
-            #batch_input_ids = batch[0]
-            #batch_attention_mask = batch[1]
-            #batch_token_type_ids = batch[2]
-            #batch_y_start = batch[3]
-            #batch_y_end = batch[4]
-            #batch_y = batch[5]
+        class_label = np.max(batch[-1])
+        answer = np.argmax(batch[-1])
+        answers.append(answer)
+        batch = [torch.tensor(t) for t in batch]
+        batch = [t.to(args.device) for t in batch]
+        # batch_input_ids = batch[0]
+        # batch_attention_mask = batch[1]
+        # batch_token_type_ids = batch[2]
+        # batch_y_start = batch[3]
+        # batch_y_end = batch[4]
+        # batch_y = batch[5]
 
-            class_label = np.max(batch[-1])
-            answer = np.argmax(batch[-1])
+        la_scores = []
+        for idx in range(len(batch[-1])):
+            one_p = [x[idx] for x in batch]
+            input_ids = one_p[0].view(1, -1)
+            attention_mask = one_p[1].view(1, -1)
+            token_type_ids = one_p[2].view(1, -1)
+            y_start = one_p[3]
+            y_end = one_p[4]
+            y = one_p[5]
+            logits_start, logits_end, logits_class = model(
+                input_ids, attention_mask, token_type_ids
+            )
+            no_answer_score = logits_class[0][0]
+            la_scores.append(1 - no_answer_score.item())
+        top3 = np.argpartition([-x for x in la_scores], 3)[:3]
+        top3_pred_answers.append(top3)
+        predicted_answer = np.argmax(la_scores)
+        pred_answers.append(predicted_answer)
 
-            la_scores = []
-            for idx in len(batch[-1]):
-                one_p = [x[idx] for x in batch]
-                input_ids = one_p[0]
-                attention_mask = one_p[1]
-                token_type_ids = one_p[2]
-                y_start = one_p[3]
-                y_end = one_p[4]
-                y = one_p[5]
-                logits_start, logits_end, logits_class = model(
-                    input_ids, attention_mask, token_type_ids
-                )
-                no_answer_score = logits_class[0]
-                la_scores.append(1 - no_answer_score)
-
-            predicted_answer = np.argmax(la_scores)
-            top3 = np.argpartition(-logits_class, 3)[:3]
-            top3_pred_answers.append(top3)
 
 # calc results
 
@@ -124,6 +121,5 @@ def acc_at_3(y_true, top_3_pred):
 
     return np.mean(accuracy)
 
-
 print('Accuracy: ', accuracy_score(answers, pred_answers))
-print('Accuracy@3: ', acc_at_3(answers, pred_answers))
+print('Accuracy@3: ', acc_at_3(answers, top3_pred_answers))
