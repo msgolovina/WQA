@@ -40,7 +40,7 @@ if __name__ == '__main__':
     )
 
     # todo: move device and local rank setting from config to train script
-    if not config['local_rank'] == -1:
+    if not args.local_rank == -1:
         torch.distributed.init_process_group(backend='nccl')
 
     # setup logging
@@ -69,6 +69,8 @@ if __name__ == '__main__':
     bert_config.num_labels = config['num_labels']
     model = BertForQA.from_pretrained(config['pretrained_bert_name'], config=bert_config)
     # todo: torch distrib barrier?
+    if args.local_rank == 0:
+        torch.distributed.barrier()
     model.to(config['device'])
 
     logger.info(f'Training/eval params: {config}')
