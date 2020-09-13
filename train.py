@@ -10,6 +10,7 @@ import logging
 import os
 import yaml
 from torch.utils.data import DataLoader, RandomSampler
+from torch.utils.data.distributed import DistributedSampler
 from transformers import BertTokenizer, BertConfig
 import torch
 
@@ -82,7 +83,7 @@ if __name__ == '__main__':
             config['train_data_path'],
             tokenizer,
         )
-        sampler = RandomSampler(dataset)
+        sampler = RandomSampler(train_dataset) if args.local_rank == -1 else DistributedSampler(train_dataset)
         dataloader = DataLoader(dataset, sampler=sampler,
                                       batch_size=batch_size,
                                       pin_memory=True)
