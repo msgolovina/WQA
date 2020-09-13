@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader, SequentialSampler
 # from transformers import BertConfig, BertTokenizer
 import torch
 from tqdm import tqdm
+from sklearn.metrics import accuracy_score
 
 logger = logging.getLogger(__name__)
 
@@ -89,8 +90,8 @@ for batch in tqdm(dataloader, desc="Evaluating"):
             #batch_y_end = batch[4]
             #batch_y = batch[5]
 
-            class_label = np.max(batch_y[-1])
-            answer = np.argmax(batch_y[-1])
+            class_label = np.max(batch[-1])
+            answer = np.argmax(batch[-1])
 
             la_scores = []
             for idx in len(batch[-1]):
@@ -112,9 +113,6 @@ for batch in tqdm(dataloader, desc="Evaluating"):
             top3_pred_answers.append(top3)
 
 # calc results
-
-# todo: hdr
-sklearn.metrics import accuracy_score
 
 def acc_at_3(y_true, top_3_pred):
     accuracy = []
