@@ -69,7 +69,6 @@ if args.n_gpu > 1 and not isinstance(model, torch.nn.DataParallel):
 
 # Eval!
 logger.info("***** Running evaluation *****")
-logger.info("  Num examples = %d", len(dataset))
 logger.info("  Batch size = %d", batch_size)
 answers = []
 pred_answers = []
