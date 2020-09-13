@@ -13,9 +13,8 @@ from sklearn.metrics import accuracy_score
 logger = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser()
-args = parser.parse_args()
 parser.add_argument(
-    "--local_rank",
+    "--local-rank",
     type=int,
     default=-1,
     help="local_rank for distributed training on gpus",
@@ -32,6 +31,8 @@ parser.add_argument(
 )
 parser.add_argument("--no_cuda", action="store_true",
                     help="Whether not to use CUDA when available")
+
+args = parser.parse_args()
 
 # Setup CUDA, GPU & distributed training
 if args.local_rank == -1 or args.no_cuda:

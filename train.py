@@ -228,7 +228,7 @@ if __name__ == '__main__':
         '--do-train', action='store_true'
     )
     parser.add_argument(
-        "--local_rank", # todo
+        "--local-rank", # todo
         type=int,
         default=-1,
         help="local_rank for distributed training on gpus",
