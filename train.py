@@ -244,6 +244,8 @@ if __name__ == '__main__':
     parser.add_argument("--no_cuda", action="store_true",
                         help="Whether not to use CUDA when available")
     args = parser.parse_args()
+    with open(args.config_path, 'r') as f:
+        config = yaml.safe_load(f)
     # Setup CUDA, GPU & distributed training
     if args.local_rank == -1 or args.no_cuda:
         device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
@@ -255,8 +257,6 @@ if __name__ == '__main__':
         config['n_gpu'] = 1
     config['device'] = device
 
-    with open(args.config_path, 'r') as f:
-        config = yaml.safe_load(f)
     config['local_rank'] = args.local_rank
     tokenizer = BertTokenizer.from_pretrained(
         config['pretrained_bert_name'],
