@@ -104,6 +104,7 @@ def train(data_iterator, model, config):
         except ValueError:
             logger.info('Fine-tuning pretrained model')
 
+    logger.info(f'Setting tr_loss and logging_loss to zero')
     tr_loss, logging_loss = 0., 0.
 
     # set gradients of model parameters to zero
@@ -129,6 +130,8 @@ def train(data_iterator, model, config):
 
             model.train()
 
+            logger.info(f'Reading batch')
+
             batch = [t.to(config['device']) for t in batch]
             batch_input_ids = batch[0]
             batch_attention_mask = batch[1]
@@ -137,12 +140,15 @@ def train(data_iterator, model, config):
             batch_y_end = batch[4]
             batch_y = batch[5]
 
+            logger.info(f'Batch len: {len(batch)}')
+
+            logger.info(f'Forward pass:')
             logits_start, logits_end, logits_class = model(
                 batch_input_ids,
                 batch_attention_mask,
                 batch_token_type_ids,
             )
-
+            logger.info(f'Loss:')
             loss = triple_loss(
                 (logits_start, logits_end, logits_class),
                 (batch_y_start, batch_y_end, batch_y),
@@ -155,6 +161,7 @@ def train(data_iterator, model, config):
             if config['gradient_accumulation_steps'] > 1:
                 loss /= config['gradient_accumulation_steps']
 
+            logger.info(f'Backward pass:')
             if config['fp16']:
                 with amp.scale_loss(loss, optimizer) as sc_loss:
                     sc_loss.backward()
@@ -176,7 +183,7 @@ def train(data_iterator, model, config):
                     )
                 optimizer.step()
 
-                model.zero_grad() # todo: check orig code for when zero_grad is performed
+                model.zero_grad()
 
                 global_step += 1
 

@@ -1,5 +1,8 @@
 **Tensorflow 2.0 Question Answering**
 
+    pip install torch==1.5.1+cu101 torchvision==0.6.1+cu101 -f https://download.pytorch.org/whl/torch_stable.html
+
+
 To reproduce dataset preprocessing, copy https://www.kaggle.com/c/tensorflow2-question-answering/data?select=simplified-nq-train.jsonl to `./data/` and run
 
     bash prepare_datasets.sh
