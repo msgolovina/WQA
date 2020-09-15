@@ -2,11 +2,12 @@ from utils import qp_to_tokens, get_class_label
 from models import BertForQA
 
 import argparse
-import numpy as np
 import json
+import numpy as np
 import torch
-import yaml
+from tqdm import tqdm
 from transformers import BertTokenizer
+import yaml
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -14,6 +15,11 @@ parser.add_argument(
     type=int,
     default=-1,
     help="local_rank for distributed training on gpus",
+)
+parser.add_argument(
+    "--model-checkpoint-path",
+    type=str,
+    default='logs/test_run/output/checkpoint-17000'
 )
 
 CONFIG_PATH = 'logs/test_run/config.yml'
@@ -82,7 +88,7 @@ def get_hnm_train_data(line):
         y_start[index] = start
         y_end[index] = end
     attention_mask = input_ids > 0
-    return question_words, la_candidates, sa_start, sa_end, input_ids, attention_mask, token_type_ids, y_start, y_end, y
+    return input_ids, attention_mask, token_type_ids, y_start, y_end, y
 
 
 def get_hnm_samples(line, model):
@@ -104,50 +110,42 @@ def get_hnm_samples(line, model):
         )
         no_answer_score = logits_class[0][0]
         la_scores.append(1 - no_answer_score.item())
-    top3 = np.argpartition([-x for x in la_scores], 3)[:3]
-    top2_neg = [x for x in top3 if x != answer][:2]
-    idx_to_save = [answer, top2_neg[0], top2_neg[1]]
-    samples_to_save = []
-    for i in idx_to_save:
-        input_ids = example[i][0].view(1, -1)
-        attention_mask = example[i][1].view(1, -1)
-        token_type_ids = example[i][2].view(1, -1)
-        y_start = example[i][3]
-        y_end = example[i][4]
-        y = example[i][5]
-        samples_to_save.append([input_ids, attention_mask, token_type_ids, y_start, y_end, y])
 
-    return samples_to_save
+    try:
+        top3 = np.argpartition([-x for x in la_scores], 3)[:3]
+        top2_neg = [x for x in top3 if x != answer][:2]
+        idx_to_save = [answer, top2_neg[0], top2_neg[1]]
+        samples_to_save = []
+        for i in idx_to_save:
+            input_ids = example[i][0].view(1, -1)
+            attention_mask = example[i][1].view(1, -1)
+            token_type_ids = example[i][2].view(1, -1)
+            y_start = example[i][3]
+            y_end = example[i][4]
+            y = example[i][5]
+            samples_to_save.append([input_ids, attention_mask, token_type_ids, y_start, y_end, y])
+        return samples_to_save
+    except:
+        return None # todo: preprocess the data that had < 3 la candidates explicitly?
 
 
 if __name__=='__main__':
 
     args = parser.parse_args()
 
+    args.device = torch.device('cuda', args.local_rank)
+    args.n_gpu = 1
+
     model = BertForQA.from_pretrained(args.model_checkpoint_path)
     model.to(args.device)
-    # Setup CUDA, GPU & distributed training
-    if args.local_rank == -1 or args.no_cuda:
-        device = torch.device(
-            "cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
-        args.n_gpu = 0 if args.no_cuda else torch.cuda.device_count()
-    else:  # Initializes the distributed backend which will take care of sychronizing nodes/GPUs
-        torch.cuda.set_device(args.local_rank)
-        device = torch.device("cuda", args.local_rank)
-        torch.distributed.init_process_group(backend="nccl")
-        args.n_gpu = 1
-    args.device = device
 
-    lines_count = 0
     data_iterator = open(TRAIN_PATH)
     with open(FINAL_TRAIN_PATH, 'w') as fp:
         with torch.no_grad():
-            for data_line in data_iterator:
-                lines_count += 1
-                if lines_count % 500 == 0:
-                    print(f'processed {lines_count} lines')
+            for data_line in tqdm(data_iterator):
                 samples = get_hnm_samples(data_line, model)
-                for sample in samples:
-                    sample = [x.tolist() for x in sample]
-                    json.dump(sample, fp)
-                    fp.write('\n')
+                if samples is not None:
+                    for sample in samples:
+                        sample = [x.tolist() for x in sample]
+                        json.dump(sample, fp)
+                        fp.write('\n')
