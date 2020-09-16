@@ -1,9 +1,9 @@
 from typing import Dict, Tuple
 
 import numpy as np
-import torch
-import re
 import random
+import re
+import torch
 
 
 def random_sample(distribution):

@@ -243,11 +243,10 @@ if __name__ == '__main__':
     with open(args.config_path, 'r') as f:
         config = yaml.safe_load(f)
 
-    # Setup CUDA, GPU & distributed training
     if args.local_rank == -1 or args.no_cuda:
         device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
         config['n_gpu'] = 0 if args.no_cuda else torch.cuda.device_count()
-    else:  # Initializes the distributed backend which will take care of sychronizing nodes/GPUs
+    else:
         torch.cuda.set_device(args.local_rank)
         device = torch.device("cuda", args.local_rank)
         torch.distributed.init_process_group(backend="nccl")
@@ -263,7 +262,6 @@ if __name__ == '__main__':
         do_lower_case=True
     )
 
-    # setup logging
     logging.basicConfig(
         format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
         datefmt='%m/%d/%Y %H:%M:%S',

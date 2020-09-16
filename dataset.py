@@ -1,7 +1,6 @@
 from torch.utils.data import Dataset, IterableDataset
 import torch
 import json
-import numpy as np
 
 
 class NQDataset(Dataset):
@@ -24,16 +23,11 @@ class NQDataset(Dataset):
 
 
 class NQIterableTestDataset(IterableDataset):
-    def __init__(self, filepath): #tokenizer
+    def __init__(self, filepath):
         self.filepath = filepath
-        #self.tokenizer = tokenizer
 
     def get_example(self, line):
         example = json.loads(line)
-        # question = example[0][0]
-        # answer_idx = np.argmax(example[-1])
-        # answer_label = np.max(example[-1])
-        # input_ids, attention_mask, token_type_ids, start, end, y
         return example[1:]
 
     def __iter__(self):
