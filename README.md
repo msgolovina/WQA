@@ -17,6 +17,6 @@ Training using single GPU and mixed precision:
 
     bash run.sh
 
-Distributed training on 4 GPUs using mixed precision:
+Distributed training on multiple GPUs using mixed precision:
 
     bash distrib_run.sh
