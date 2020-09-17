@@ -1,9 +1,8 @@
-**Tensorflow 2.0 Question Answering**
+**QA model for [Tensorflow 2.0 Question Answering](https://www.kaggle.com/c/tensorflow2-question-answering)**
 
-trained using 8 x Tesla V100-SXM2-32GB (20 min on one epoch)
-
-    pip install torch==1.5.1+cu101 torchvision==0.6.1+cu101 -f https://download.pytorch.org/whl/torch_stable.html
-
+trained in 2 steps:
+1. for each question one positive and one random negative samples were created, the model was trained using resulting dataset
+2. inference model from step 1 to get predictions for all paragraphs, then 'hard' negatives were selected for new training dataset; continue training the model from step 1 using this new dataset
 
 To reproduce dataset preprocessing, copy https://www.kaggle.com/c/tensorflow2-question-answering/data?select=simplified-nq-train.jsonl to `./data/` and run
 
